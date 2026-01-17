@@ -6,7 +6,7 @@ import java.util.Arrays;
 public class Board {
     private static final int DEFAULT_SIZE = 3;
 
-    final Mark[][] board;
+    private final Mark[][] board;
 
     public Board() {
         this(DEFAULT_SIZE);
@@ -20,12 +20,7 @@ public class Board {
     }
 
     public Board(Board other) {
-        board = new Mark[other.board.length][other.board[0].length];
-        for (int row = 0; row < board.length; row++) {
-            for (int col = 0; col < board[0].length; col++) {
-                board[row][col] = other.board[row][col];
-            }
-        }
+        this.board = other.toArray();
     }
 
     public int size() {
@@ -35,17 +30,27 @@ public class Board {
     public Mark[][] toArray() {
         Mark[][] copyBoard = new Mark[board.length][board[0].length];
         for (int row = 0; row < board.length; row++) {
-            for (int col = 0; col < board[0].length; col++) {
-                copyBoard[row][col] = board[row][col];
-            }
+            System.arraycopy(board[row], 0, copyBoard[row], 0, board.length);
         }
         return copyBoard;
     }
 
+    public boolean isEmpty(Mark mark) {
+        return mark == Mark.EMPTY;
+    }
+
+    boolean checkBoarders(int row, int col) {
+        return row >= 0 && row < board.length && col >= 0 && col < board[0].length;
+    }
+
+    boolean checkMark(Mark mark, int row, int col) {
+        if (!(checkBoarders(row, col))) return false;
+        return board[row][col] == mark;
+    }
     public boolean place(int row, int col, Mark mark) {
-        if (mark != null && mark != Mark.EMPTY) {
-            if (!(row < 0 || row >= board.length || col < 0 || col >= board[0].length)) {
-                if (board[row][col] == Mark.EMPTY) {
+        if (mark != null && !isEmpty(mark)) {
+            if (checkBoarders(row, col)) {
+                if (checkMark(Mark.EMPTY, row, col)) {
                     board[row][col] = mark;
                     return true;
                 }
@@ -54,9 +59,10 @@ public class Board {
         return false;
     }
 
-    public void clear(int row, int col) {
-        if (row < 0 || row >= board.length || col < 0 || col >= board[0].length) return;
-        board[row][col] = Mark.EMPTY;
+    public void clearBordPlace(int row, int col) {
+        if (checkBoarders(row, col)) {
+            board[row][col] = Mark.EMPTY;
+        }
     }
 
 
@@ -65,16 +71,11 @@ public class Board {
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[0].length; col++) {
                 if (board[row][col] == Mark.EMPTY) {
-                    fl = 0;
-                    break;
+                    return false;
                 }
             }
         }
-        if (fl == 1) {
-            return true;
-        } else {
-            return false;
-        }
+        return true;
     }
 
     public int[][] availableMoves() {

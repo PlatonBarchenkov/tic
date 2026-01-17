@@ -3,11 +3,11 @@ package hometask.tictactoe;
 import java.util.Arrays;
 
 public class Game {
-    Board board;
-    int winLen;
-    Move[] moveHistory;
-    int moveCount;
-    GameState gameState;
+    private final Board board;
+    private final int winLen;
+    private Move[] moveHistory;
+    private GameState gameState;
+    private static final int VECTOR_WON = 4;
 
     public Game() {
         this(3);
@@ -21,7 +21,6 @@ public class Game {
         winLen = winLength;
         board = new Board(size);
         moveHistory = new Move[0];
-        moveCount = 0;
         gameState = GameState.X_TURN;
     }
 
@@ -29,7 +28,6 @@ public class Game {
         winLen = other.winLen;
         board = new Board(other.board);
         moveHistory = Arrays.copyOf(other.moveHistory, other.moveHistory.length);
-        moveCount = other.moveCount;
         gameState = other.gameState;
     }
 
@@ -41,19 +39,17 @@ public class Game {
         return moveHistory.clone();
     }
 
-    public boolean wonHorizon(Mark mark) {
+    public boolean wonCheck(Mark mark, int coefCol, int coefRow) {
         int countMark = 0;
         for (int row = 0; row < board.size(); row++) {
             for (int col = 0; col < board.size(); col++) {
-                if (board.board[row][col] == mark) {
+                if (board().checkMark(mark, row, col)) {
                     countMark = 1;
                     for (int len = 1; len < winLen + 1; len++) {
-                        if (col + len < board.size() && col + len >= 0) {
-                            if (board.board[row][col + len] != mark) {
-                                break;
-                            }
-                            countMark++;
+                        if (!board().checkMark(mark, row + coefCol * len, col + coefRow * len)) {
+                            break;
                         }
+                        countMark++;
                     }
                 }
                 if (countMark >= winLen) {
@@ -64,119 +60,79 @@ public class Game {
         return false;
     }
 
-    public boolean wonVertical(Mark mark) {
-        int countMark = 0;
-        for (int row = 0; row < board.size(); row++) {
-            for (int col = 0; col < board.size(); col++) {
-                if (board.board[row][col] == mark) {
-                    countMark = 1;
-                    for (int len = 1; len < winLen + 1; len++) {
-                        if (row + len < board.size() && row + len >= 0) {
-                            if (board.board[row + len][col] != mark) {
-                                break;
-                            }
-                            countMark++;
-                        }
-                    }
-                }
-                if (countMark >= winLen) {
-                    return true;
-                }
-            }
+    public boolean hasWonMark(Mark mark) {
+        return wonCheck(mark, 0, 1) || wonCheck(mark, 1, 0) || wonCheck(mark, 1, 1) || wonCheck(mark, 1, -1);
+    }
+
+    public void changeStateAfterWin() {
+        if (hasWonMark(Mark.X)) {
+            gameState = GameState.X_WON;
+        } else if (hasWonMark(Mark.O)) {
+            gameState = GameState.O_WON;
         }
-        return false;
     }
-
-    public boolean wonDiagRight(Mark mark) {
-        int countMark = 0;
-        for (int row = 0; row < board.size(); row++) {
-            for (int col = 0; col < board.size(); col++) {
-                if (board.board[row][col] == mark) {
-                    countMark = 1;
-                    for (int len = 1; len < winLen + 1; len++) {
-                        if (row + len < board.size() && row + len >= 0 && col + len < board.size() && col + len >= 0) {
-                            if (board.board[row + len][col + len] != mark) {
-                                break;
-                            }
-                            countMark++;
-                        }
-                    }
-                }
-                if (countMark >= winLen) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean wonDiagLeft(Mark mark) {
-        int countMark = 0;
-        for (int row = 0; row < board.size(); row++) {
-            for (int col = 0; col < board.size(); col++) {
-                if (board.board[row][col] == mark) {
-                    countMark = 1;
-                    for (int len = 1; len < winLen + 1; len++) {
-                        if (row + len < board.size() && row + len >= 0 && col - len < board.size() && col - len >= 0) {
-                            if (board.board[row + len][col - len] != mark) {
-                                break;
-                            }
-                            countMark++;
-                        }
-                    }
-                }
-                if (countMark >= winLen) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public boolean won(Mark mark) {
-        return (wonHorizon(mark) || wonVertical(mark) || wonDiagRight(mark) || wonDiagLeft(mark));
-    }
-
 
     public GameState state() {
-        if (moveCount % 2 == 0) {
-            if (won(Mark.O)) {
-                return GameState.O_WON;
-            } else if (!(board.full())) {
+        changeStateAfterWin();
+        if (gameState == GameState.O_WON) {
+            return GameState.O_WON;
+        } else if (gameState == GameState.X_WON) {
+            return GameState.X_WON;
+        }
+        if (gameState == GameState.X_TURN) {
+            if (!(board.full())) {
                 return GameState.X_TURN;
             }
         } else {
-            if (won(Mark.X)) {
-                return GameState.X_WON;
-            } else if (!(board.full())) {
+            if (!(board.full())) {
                 return GameState.O_TURN;
             }
         }
         if (board.full()) {
-            if (won(Mark.X)) {
-                return GameState.X_WON;
-            }
-            if (won(Mark.O)) {
-                return GameState.O_WON;
-            }
             return GameState.DRAW;
         }
-        return (moveCount % 2 == 0) ? GameState.X_TURN : GameState.O_TURN;
+        return (gameState == GameState.O_TURN) ? GameState.X_TURN : GameState.O_TURN;
+    }
+
+    boolean canApply(Move move) {
+        gameState = state();
+        if (!(moveHistory.length == 0 && move.mark() == Mark.O)) {
+            if (gameState != GameState.O_WON && gameState != GameState.X_WON && gameState != GameState.DRAW) {
+                if (board.place(move.row(), move.col(), move.mark())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    void changeState(GameState gameState) {
+        if (gameState == GameState.O_TURN) {
+            this.gameState = GameState.X_TURN;
+        }
+        if (gameState == GameState.X_TURN) {
+            this.gameState = GameState.O_TURN;
+        }
+    }
+
+    void changeState(Mark mark) {
+        if (mark == Mark.O) {
+            this.gameState = GameState.O_TURN;
+        }
+        if (mark == Mark.X) {
+            this.gameState = GameState.X_TURN;
+        }
     }
 
     public boolean apply(Move move) {
         gameState = state();
-        if (move.col() < board.size() && move.col() >= 0 && move.row() >= 0 && move.row() < board.size() && (move.mark() == Mark.O || move.mark() == Mark.X)) {
-            if ((moveCount % 2 == 0 && move.mark() == Mark.X) || (moveCount % 2 == 1 && move.mark() == Mark.O)) {
-                if (board.board[move.row()][move.col()] == Mark.EMPTY) {
-                    if (!(gameState == GameState.O_WON || gameState == GameState.X_WON || gameState == GameState.DRAW)) {
-                        board.place(move.row(), move.col(), move.mark());
-                        moveCount++;
-                        moveHistory = Arrays.copyOf(moveHistory, moveHistory.length + 1);
-                        moveHistory[moveHistory.length - 1] = new Move(move.row(), move.col(), move.mark());
-                        return true;
-                    }
-                }
+        if (board.checkMark(Mark.EMPTY, move.row(), move.col())) {
+            if (canApply(move)) {
+                changeState(gameState);
+                moveHistory = Arrays.copyOf(moveHistory, moveHistory.length + 1);
+                moveHistory[moveHistory.length - 1] = new Move(move.row(), move.col(), move.mark());
+                return true;
+
             }
         }
         return false;
@@ -186,7 +142,7 @@ public class Game {
         Move[] moveWon = new Move[winLen];
         GameState state = state();
         Mark winner = null;
-        int[] winLine = new int[4];
+        int[] winLine = new int[VECTOR_WON];
         if (state != GameState.O_WON && state != GameState.X_WON) {
             return new Move[0];
         }
@@ -209,13 +165,13 @@ public class Game {
 
     private int[] lastWinningLine(Mark mark) {
         int[][] vectorWin = {{0, 1}, {1, 0}, {1, 1}, {1, -1}};
-        for (int[] v : vectorWin) {
+        for (int[] vector : vectorWin) {
             for (int row = 0; row < board.size(); row++) {
                 for (int col = 0; col < board.size(); col++) {
-                    if (board.board[row][col] == mark) {
+                    if (board.checkMark(mark, row, col)) {
 
-                        if (hasWinningLine(row, col, v[0], v[1], mark)) {
-                            return new int[]{row, col, v[0], v[1]};
+                        if (hasWinningLine(row, col, vector[0], vector[1], mark)) {
+                            return new int[]{row, col, vector[0], vector[1]};
                         }
                     }
                 }
@@ -227,10 +183,10 @@ public class Game {
 
     private boolean hasWinningLine(int row, int col, int coefFirst, int coefSecond, Mark mark) {
         for (int len = 1; len < winLen; len++) {
-            if (row + coefFirst * len >= board.size() || col + coefSecond * len >= board.size() || row + coefFirst * len < 0 || col + coefSecond * len < 0) {
+            if (!board.checkMark(mark, row + coefFirst * len, col + coefSecond * len)) {
                 return false;
             }
-            if (board.board[row + coefFirst * len][col + coefSecond * len] != mark) {
+            if (!board.checkMark(mark, row + coefFirst, col + coefSecond)) {
                 return false;
             }
         }
@@ -239,10 +195,9 @@ public class Game {
 
     public boolean undoLast() {
         if (moveHistory.length != 0) {
-            board.clear(moveHistory[moveHistory.length - 1].row(), moveHistory[moveHistory.length - 1].col());
+            changeState(moveHistory[moveHistory.length - 1].mark());
+            board.clearBordPlace(moveHistory[moveHistory.length - 1].row(), moveHistory[moveHistory.length - 1].col());
             moveHistory = Arrays.copyOf(moveHistory, moveHistory.length - 1);
-            moveCount--;
-            gameState = state();
             return true;
         }
         return false;
