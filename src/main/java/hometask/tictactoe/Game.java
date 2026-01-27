@@ -3,11 +3,11 @@ package hometask.tictactoe;
 import java.util.Arrays;
 
 public class Game {
+    private static final int VECTOR_WON = 4;
     private final Board board;
     private final int winLen;
     private Move[] moveHistory;
     private GameState gameState;
-    private static final int VECTOR_WON = 4;
 
     public Game() {
         this(3);
@@ -17,25 +17,25 @@ public class Game {
         this(size, size);
     }
 
-    Game(int size, int winLength) {
+    public Game(int size, int winLength) {
         winLen = winLength;
         board = new Board(size);
         moveHistory = new Move[0];
         gameState = GameState.X_TURN;
     }
 
-    Game(Game other) {
+    public Game(Game other) {
         winLen = other.winLen;
         board = new Board(other.board);
         moveHistory = Arrays.copyOf(other.moveHistory, other.moveHistory.length);
         gameState = other.gameState;
     }
 
-    Board board() {
+    public Board board() {
         return new Board(board);
     }
 
-    Move[] history() {
+    public Move[] history() {
         return moveHistory.clone();
     }
 
@@ -43,10 +43,10 @@ public class Game {
         int countMark = 0;
         for (int row = 0; row < board.size(); row++) {
             for (int col = 0; col < board.size(); col++) {
-                if (board().checkMark(mark, row, col)) {
+                if (board().chekMark(mark, row, col)) {
                     countMark = 1;
                     for (int len = 1; len < winLen + 1; len++) {
-                        if (!board().checkMark(mark, row + coefCol * len, col + coefRow * len)) {
+                        if (!board().chekMark(mark, row + coefCol * len, col + coefRow * len)) {
                             break;
                         }
                         countMark++;
@@ -94,7 +94,7 @@ public class Game {
         return (gameState == GameState.O_TURN) ? GameState.X_TURN : GameState.O_TURN;
     }
 
-    boolean canApply(Move move) {
+    private boolean canApply(Move move) {
         gameState = state();
         if (!(moveHistory.length == 0 && move.mark() == Mark.O)) {
             if (gameState != GameState.O_WON && gameState != GameState.X_WON && gameState != GameState.DRAW) {
@@ -106,27 +106,27 @@ public class Game {
         return false;
     }
 
-    void changeState(GameState gameState) {
-        if (gameState == GameState.O_TURN) {
-            this.gameState = GameState.X_TURN;
+    private void changeState(GameState State) {
+        if (State == GameState.O_TURN) {
+            gameState = GameState.X_TURN;
         }
-        if (gameState == GameState.X_TURN) {
-            this.gameState = GameState.O_TURN;
+        if (State == GameState.X_TURN) {
+            gameState = GameState.O_TURN;
         }
     }
 
-    void changeState(Mark mark) {
+    private void changeState(Mark mark) {
         if (mark == Mark.O) {
-            this.gameState = GameState.O_TURN;
+            gameState = GameState.O_TURN;
         }
         if (mark == Mark.X) {
-            this.gameState = GameState.X_TURN;
+            gameState = GameState.X_TURN;
         }
     }
 
     public boolean apply(Move move) {
         gameState = state();
-        if (board.checkMark(Mark.EMPTY, move.row(), move.col())) {
+        if (board.chekMark(Mark.EMPTY, move.row(), move.col())) {
             if (canApply(move)) {
                 changeState(gameState);
                 moveHistory = Arrays.copyOf(moveHistory, moveHistory.length + 1);
@@ -142,6 +142,10 @@ public class Game {
         Move[] moveWon = new Move[winLen];
         GameState state = state();
         Mark winner = null;
+        int startRow;
+        int startCol;
+        int deltaRow;
+        int deltaCol;
         int[] winLine = new int[VECTOR_WON];
         if (state != GameState.O_WON && state != GameState.X_WON) {
             return new Move[0];
@@ -153,9 +157,13 @@ public class Game {
             winLine = lastWinningLine(Mark.X);
             winner = Mark.X;
         }
-        if (winLine != null && winner != null) {
-            for (int len = 0; len < winLen; len++) {
-                moveWon[len] = new Move(winLine[0] + winLine[2] * len, winLine[1] + winLine[3] * len, winner);
+        startRow = winLine[0];
+        startCol = winLine[1];
+        deltaRow = winLine[2];
+        deltaCol = winLine[3];
+        if (winLine != null) {
+            for (int step = 0; step < winLen; step++) {
+                moveWon[step] = new Move(startRow + deltaRow * step, startCol + deltaCol * step, winner);
             }
         } else {
             return new Move[0];
@@ -168,7 +176,7 @@ public class Game {
         for (int[] vector : vectorWin) {
             for (int row = 0; row < board.size(); row++) {
                 for (int col = 0; col < board.size(); col++) {
-                    if (board.checkMark(mark, row, col)) {
+                    if (board.chekMark(mark, row, col)) {
 
                         if (hasWinningLine(row, col, vector[0], vector[1], mark)) {
                             return new int[]{row, col, vector[0], vector[1]};
@@ -183,10 +191,7 @@ public class Game {
 
     private boolean hasWinningLine(int row, int col, int coefFirst, int coefSecond, Mark mark) {
         for (int len = 1; len < winLen; len++) {
-            if (!board.checkMark(mark, row + coefFirst * len, col + coefSecond * len)) {
-                return false;
-            }
-            if (!board.checkMark(mark, row + coefFirst, col + coefSecond)) {
+            if (!board.chekMark(mark, row + coefFirst * len, col + coefSecond * len)) {
                 return false;
             }
         }
@@ -203,7 +208,7 @@ public class Game {
         return false;
     }
 
-    Game mergeFromLogs(Move[] a, Move[] b) {
+    public Game mergeFromLogs(Move[] a, Move[] b) {
         return null;
     }
 }

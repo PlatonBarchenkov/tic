@@ -20,7 +20,7 @@ public class Board {
     }
 
     public Board(Board other) {
-        this.board = other.toArray();
+        board = other.toArray();
     }
 
     public int size() {
@@ -39,18 +39,21 @@ public class Board {
         return mark == Mark.EMPTY;
     }
 
-    boolean checkBoarders(int row, int col) {
+    private boolean checkBoarders(int row, int col) {
         return row >= 0 && row < board.length && col >= 0 && col < board[0].length;
     }
 
-    boolean checkMark(Mark mark, int row, int col) {
-        if (!(checkBoarders(row, col))) return false;
+    public boolean chekMark(Mark mark, int row, int col) {
+        if (!(checkBoarders(row, col))) {
+            return false;
+        }
         return board[row][col] == mark;
     }
+
     public boolean place(int row, int col, Mark mark) {
         if (mark != null && !isEmpty(mark)) {
             if (checkBoarders(row, col)) {
-                if (checkMark(Mark.EMPTY, row, col)) {
+                if (chekMark(Mark.EMPTY, row, col)) {
                     board[row][col] = mark;
                     return true;
                 }
@@ -67,7 +70,6 @@ public class Board {
 
 
     public boolean full() {
-        int fl = 1;
         for (int row = 0; row < board.length; row++) {
             for (int col = 0; col < board[0].length; col++) {
                 if (board[row][col] == Mark.EMPTY) {
