@@ -35,7 +35,7 @@ public class Board {
         return copyBoard;
     }
 
-    public boolean isEmpty(Mark mark) {
+    private boolean isEmpty(Mark mark) {
         return mark == Mark.EMPTY;
     }
 

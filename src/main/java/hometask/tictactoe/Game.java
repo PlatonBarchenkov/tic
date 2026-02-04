@@ -3,6 +3,7 @@ package hometask.tictactoe;
 import java.util.Arrays;
 
 public class Game {
+    private static final int DEFAULT_SIZE = 3;
     private static final int VECTOR_WON = 4;
     private final Board board;
     private final int winLen;
@@ -10,7 +11,7 @@ public class Game {
     private GameState gameState;
 
     public Game() {
-        this(3);
+        this(DEFAULT_SIZE);
     }
 
     public Game(int size) {
